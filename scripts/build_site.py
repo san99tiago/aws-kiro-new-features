@@ -2,7 +2,7 @@
 """Render research/*.md into site/research/*.html plus a manifest.json.
 
 Uses only the standard library, with a small Markdown subset renderer
-(headings, lists, links, bold, inline code, code blocks, paragraphs).
+(headings, bullet and ordered lists, links, bold, inline code, code blocks, paragraphs).
 """
 import html
 import json
@@ -19,10 +19,11 @@ PAGE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
 <link rel="stylesheet" href="../styles.css">
-<script>document.documentElement.setAttribute("data-theme", localStorage.getItem("theme") || "light");</script>
+<script>(function(){{var r=document.documentElement,s=localStorage.getItem("theme"),d=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;r.setAttribute("data-theme",s||(d?"dark":"light"));window.addEventListener("DOMContentLoaded",function(){{document.getElementById("theme-toggle").addEventListener("click",function(){{var n=r.getAttribute("data-theme")==="dark"?"light":"dark";r.setAttribute("data-theme",n);localStorage.setItem("theme",n);}});}});}})();</script>
 </head><body>
 <header class="topbar"><a class="brand" href="../index.html">Kiro News</a>
-<nav><a href="index.html">All reports</a><a href="latest.html">Latest</a></nav></header>
+<nav><a href="index.html">All reports</a><a href="latest.html">Latest</a>
+<button id="theme-toggle" type="button" aria-label="Toggle dark or light theme">Theme</button></nav></header>
 <main>
 {body}
 </main>
@@ -46,7 +47,7 @@ def inline(text):
 
 
 def render(md):
-    out, in_list, in_code, para = [], False, False, []
+    out, in_list, in_code, para = [], None, False, []
 
     def flush():
         nonlocal para
@@ -57,8 +58,8 @@ def render(md):
     def close_list():
         nonlocal in_list
         if in_list:
-            out.append("</ul>")
-            in_list = False
+            out.append("</%s>" % in_list)
+            in_list = None
 
     for line in md.splitlines():
         if line.startswith("```"):
@@ -76,12 +77,14 @@ def render(md):
             close_list()
             n = len(m.group(1))
             out.append("<h%d>%s</h%d>" % (n, inline(m.group(2)), n))
-        elif re.match(r"^\s*[-*]\s+", line):
+        elif re.match(r"^\s*([-*]|\d+[.)])\s+", line):
             flush()
-            if not in_list:
-                out.append('<ul class="list">')
-                in_list = True
-            out.append("<li>%s</li>" % inline(re.sub(r"^\s*[-*]\s+", "", line)))
+            kind = "ol" if re.match(r"^\s*\d", line) else "ul"
+            if in_list != kind:
+                close_list()
+                out.append('<%s class="list">' % kind)
+                in_list = kind
+            out.append("<li>%s</li>" % inline(re.sub(r"^\s*([-*]|\d+[.)])\s+", "", line)))
         elif not line.strip():
             flush()
             close_list()
@@ -105,9 +108,10 @@ def title_of(md, fallback):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     files = sorted(
-        (p for p in SRC.glob("*.md") if p.name != "README.md"), reverse=True
+        (p for p in SRC.glob("*.md") if p.name not in ("README.md", "latest.md")), reverse=True
     )
     manifest = []
+    # latest.md is rendered only as latest.html, never listed as a report.
     for p in files:
         md = p.read_text(encoding="utf-8")
         title = title_of(md, p.stem)

@@ -6,6 +6,7 @@ and refreshes research/latest.md. Requires KIRO_API_KEY in the environment
 (never printed) and kiro-cli on PATH.
 """
 import datetime
+import re
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -37,6 +38,19 @@ Rules:
 - Respond with the Markdown report only."""
 
 
+ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|\x1b\][^\x07]*\x07")
+
+
+def clean_output(text, name):
+    """Strip ANSI codes and any text before the requested heading.
+
+    Returns "" when the expected "# Kiro ..." heading is missing.
+    """
+    text = ANSI_RE.sub("", text)
+    m = re.search(r"^# Kiro .*$", text, re.MULTILINE)
+    return text[m.start():].strip() if m else ""
+
+
 def run_surface(name, surface, date):
     prompt = PROMPT.format(sources=SOURCES, surface=surface, name=name.upper(), date=date)
     cmd = [
@@ -48,17 +62,19 @@ def run_surface(name, surface, date):
         proc = subprocess.run(
             cmd, capture_output=True, text=True, timeout=TIMEOUT_SECONDS, check=False
         )
-        body = proc.stdout.strip()
-        if proc.returncode != 0 or not body:
+        body = clean_output(proc.stdout, name)
+        ok = proc.returncode == 0 and bool(body)
+        if not ok:
             err = proc.stderr.strip().splitlines()[-1:] or ["no output"]
             body = "# Kiro %s: weekly findings (%s)\n\nResearch failed (exit %d): %s\n" % (
                 name.upper(), date, proc.returncode, err[0][:200]
             )
     except subprocess.TimeoutExpired:
+        ok = False
         body = "# Kiro %s: weekly findings (%s)\n\nResearch timed out.\n" % (name.upper(), date)
     path = OUT_DIR / ("%s-%s.md" % (date, name))
     path.write_text(body.rstrip() + "\n", encoding="utf-8")
-    return name, path, body
+    return name, path, body, ok
 
 
 def main():
@@ -72,9 +88,14 @@ def main():
         "# Kiro weekly research (%s)\n" % date,
         "Findings from headless Kiro CLI sessions for each surface.\n",
     ]
-    for name, path, body in results:
+    for name, path, body, _ in results:
         parts.append("\n---\n\n" + body.strip() + "\n")
         print("wrote", path.relative_to(ROOT))
+    if not any(r[3] for r in results):
+        print("error: all surfaces failed, not writing summary or latest.md", file=sys.stderr)
+        for _, path, _, _ in results:
+            path.unlink(missing_ok=True)
+        return 1
     summary = "\n".join(parts)
     (OUT_DIR / ("%s-summary.md" % date)).write_text(summary, encoding="utf-8")
     (OUT_DIR / "latest.md").write_text(summary, encoding="utf-8")
