@@ -1,0 +1,57 @@
+name: Kiro weekly research
+
+on:
+  schedule:
+    # Every Thursday 12:00 UTC (7am Colombia)
+    - cron: "0 12 * * 4"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Kiro CLI
+        run: |
+          curl -fsSL https://cli.kiro.dev/install | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Check Kiro CLI version
+        run: kiro-cli --version
+
+      - name: Run headless research (CLI, IDE, Web, Crew)
+        env:
+          KIRO_API_KEY: ${{ secrets.KIRO_API_KEY }}
+        run: python3 src/run_kiro_research.py
+
+      - name: Show results in the job summary
+        run: |
+          {
+            echo "## Kiro weekly research"
+            echo
+            cat research/latest.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: kiro-research
+          path: research/*.md
+
+      - name: Open pull request with findings
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: kiro/weekly-research
+          commit-message: "docs: weekly Kiro research"
+          title: "docs: weekly Kiro research"
+          body: |
+            Automated weekly findings from headless Kiro CLI for CLI, IDE, Web and Crew.
+            Review the Markdown under `research/`, then merge to publish on GitHub Pages.
+          add-paths: research/*.md
+          delete-branch: true
