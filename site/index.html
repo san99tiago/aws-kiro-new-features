@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kiro New Features, Explained Simply</title>
+  <meta name="description" content="Plain-language explanations of what is new in Kiro: CLI, IDE, Web and Crew. Updated every Thursday.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top">Kiro News</a>
+    <nav>
+      <a href="#surfaces">Surfaces</a>
+      <a href="#research">Weekly research</a>
+      <a href="#how">How it works</a>
+      <a href="https://github.com/san99tiago/aws-kiro-new-features">GitHub</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle dark or light theme">Theme</button>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <h1>Kiro's new features, explained in simple terms</h1>
+      <p>One place to understand what is new across <strong>Kiro CLI</strong>, <strong>Kiro IDE</strong>, <strong>Kiro Web</strong> and <strong>Kiro Crew</strong>. A headless Kiro agent reviews the official pages every Thursday and reports what changed.</p>
+      <p><a class="btn" href="#research">See the latest findings</a></p>
+    </section>
+
+    <section id="surfaces">
+      <h2>The four surfaces</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Kiro CLI</h3>
+          <p>Kiro in your terminal. Chat with the agent, run tools, and automate work in scripts and CI/CD with headless mode and an API key.</p>
+          <a href="https://kiro.dev/docs/cli/">Docs</a>
+        </article>
+        <article class="card">
+          <h3>Kiro IDE</h3>
+          <p>The agentic IDE. Turn ideas into specs (requirements, design, tasks), then let the agent build them, with hooks and steering to keep it on track.</p>
+          <a href="https://kiro.dev/docs/">Docs</a>
+        </article>
+        <article class="card">
+          <h3>Kiro Web</h3>
+          <p>Kiro in the browser. Write specs, hand work to the agent, and review the pull requests it opens, without a local setup.</p>
+          <a href="https://kiro.dev">kiro.dev</a>
+        </article>
+        <article class="card">
+          <h3>Kiro Crew</h3>
+          <p>Kiro working as a team of agents. Check the weekly research below for the current, verified description and what is new.</p>
+          <a href="https://kiro.dev/changelog/">Changelog</a>
+        </article>
+      </div>
+    </section>
+
+    <section id="research">
+      <h2>Weekly research</h2>
+      <p>Every Thursday a GitHub Actions workflow runs Kiro CLI in headless mode, reads the official Kiro sites, and writes a Markdown report for each surface.</p>
+      <p><a class="btn" href="research/index.html">Browse all reports</a> <a class="btn secondary" href="research/latest.html">Latest report</a></p>
+      <ul id="research-list" class="list"><li>Loading reports...</li></ul>
+    </section>
+
+    <section id="how">
+      <h2>How this repo works</h2>
+      <ol>
+        <li>Specs are written in Kiro Web.</li>
+        <li>Kiro Web opens pull requests and evolves the repo over time.</li>
+        <li>On merge to <code>main</code>, GitHub Pages publishes this site.</li>
+        <li>Each Thursday, headless Kiro researches and opens a PR with new findings.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <p>Apache 2.0. Copyright 2026 Santiago Garcia Arango. Unofficial community project.</p>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>
