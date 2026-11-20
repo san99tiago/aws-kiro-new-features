@@ -39,3 +39,6 @@ section { padding: 32px 0; }
 code { background: var(--card); padding: 1px 6px; border-radius: 4px; }
 pre { background: var(--card); padding: 12px; border-radius: 8px; overflow-x: auto; }
 footer { text-align: center; color: var(--muted); padding: 32px 24px; border-top: 1px solid var(--border); }
+
+.flags { display: flex; flex-wrap: wrap; gap: 4px; font-size: 1.25rem; line-height: 1; }
+.flags span { cursor: default; }
