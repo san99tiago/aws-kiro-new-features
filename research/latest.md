@@ -1,199 +1,193 @@
-# Kiro weekly research (2026-11-19)
+# Kiro weekly research (2026-11-26)
 
 Findings from headless Kiro CLI sessions for each surface.
 
 
 ---
 
-# Kiro CLI: weekly findings (2026-11-19)
+# Kiro CLI: weekly findings (2026-11-26)
 
 ## What is new
 
-- **CLI 3.5.0 (Nov 17, 2026):** This release adds organization sign-in for MCP servers in V3 sessions.
-  - You run `kiro-cli mcp idp setup` with your identity provider's issuer and client ID. Then you open `/mcp` and press `Enter` to sign in once. Every server set to organization sign-in shares that sign-in. Those servers stay disconnected until you do.
-  - For an HTTP server whose owner issued Kiro a client ID, `kiro-cli mcp add` now accepts `--oauth-client-id <client-id>`. This does not apply when your organization's registry manages that server's OAuth.
-  - You can set `auth.portalUrl` so `kiro-cli login` opens a portal of your choice. Administrators can set it with the `AuthPortalUrl` policy or `auth_portal_url` in `managed-settings.json`. If Kiro cannot use the value, it falls back to the default portal.
-- **CLI 3.4.0 (Nov 16, 2026):**
-  - In V3 sessions, a `PreToolUse` hook can return `updatedInput` to replace a tool call's inputs before the tool runs. It can still return `allow`, `ask`, or `deny`.
-  - A new `PermissionRequest` hook runs when a tool call would ask for permission, so a script can answer the prompt.
-  - `/memories` now offers four choices.
-  - Cloud sessions resume and list in more places.
-  - The release also fixes headless, context window, MCP, search, `/tangent`, `/rewind`, and display issues. The changelog text I read was cut off, so I did not see the details.
-- **Local sandbox controls for enterprises (Nov 17, 2026):** Administrators can require sandboxing for commands and local stdio MCP servers in Enterprise Management, which is in preview. Developers need Kiro CLI 3.4.0 or later.
-- **Kiro CLI 3.0 launched on Nov 3, 2026.** V3 is the default experience. It includes "Approve for me", spec mode (`/spec new`), `/tangent`, a `/sessions` pane, workflows, cloud sessions (`kiro-cli --cloud`), and memory (`/memories`). Inline shell autocomplete, the CLI desktop app, and the Classic experience are retired. To return to V2, run `kiro-cli --v2` (applies to that launch only). Sessions made in V3 cannot be resumed in V2.
-- **Headless mode docs:**
-  - Authentication uses the `KIRO_API_KEY` environment variable. API keys are available to Pro, Pro+, Pro Max, and Power subscribers.
-  - You run `kiro-cli chat --no-interactive "prompt"`, or pipe the prompt through stdin.
-  - A local headless run that names no harness runs V2, with some exceptions. The docs recommend adding `--v3` or `--v2` so the run does not depend on the default.
-  - With V3, use `--trust-all-tools` or `--trust-tools=<ids>` to approve tools. In CLI 3.3.0 or later, `--trust-tools` also accepts V2 tool names, `@server` or `@server/tool`, `@builtin`, and `*` or `?` patterns.
-  - A first message starting with `@<prompt-name>` runs that prompt, and `@agent-sop:<name>` runs the named SOP (CLI 2.33 or later).
-  - V3 non-interactive runs load Hooks from the agent and workspace (CLI 2.27.1 or later). `--trust-all-tools` approves Hook confirmation requests automatically, and `--trust-tools` does not.
-  - Governance rules from your administrator, such as MCP restrictions and model access policies, apply to headless sessions too.
-  - If a sub-agent's tool call is not allowed by the parent session's policy, a headless run denies it. Adding the sub-agent to `trustedAgents` does not change this.
+- **Kiro CLI 3.6.0 (Nov 23, 2026), "Subagent Stop Hooks and Guided Compaction."** The changelog lists patches 3.6.1 and 3.6.2, both dated Nov 25, 2026.
+  - A `SubagentStop` hook runs in a V3 session when a dispatched subagent finishes. It can send that subagent one more instruction before its result returns.
+  - When any Hook's output is longer than 3,000 characters, Kiro CLI saves the full output to a file. The agent gets the beginning of the output plus the file path.
+  - In a V3 session you can add instructions after `/compact`. An example is `/compact Keep the migration decisions and remaining validation steps`. The instructions apply only to that one compaction.
+  - The release also adds conversation recaps, notification controls, managed V2 controls, and an all-users Windows installer. The changelog snippet I saw gave no further detail on these.
+- **Headless mode docs.**
+  - Headless mode runs with `kiro-cli chat --no-interactive`. The prompt can be a positional argument or piped through stdin.
+  - Authentication uses a stored login or the `KIRO_API_KEY` environment variable. A stored login takes precedence over the API key.
+  - API keys are available only to Pro, Pro+, Pro Max, and Power subscribers. If an administrator manages your subscription, they must enable API key generation first.
+  - Admin governance rules, such as MCP restrictions, model access, and web fetch permissions, also apply to headless sessions.
+  - A local headless run that names no harness runs V2. The docs recommend adding `--v3` or `--v2` so the run does not depend on the default.
+  - In V3, use `--trust-all-tools` or `--trust-tools=<ids>` because no user is there to approve tool calls.
+  - In Kiro CLI 3.6.2 or later, `web_search` and `@builtin` in `--trust-tools` also trust V3 web search. A `use_aws` entry prints a warning that it has no effect on V3.
+  - In V3, a sub-agent tool call runs without approval only if the parent session's policy also allows it. Otherwise a headless run denies it. Adding the sub-agent to `trustedAgents` does not change this.
+  - In Kiro CLI 2.33 or later, a first message starting with `@<prompt-name>` runs that prompt. `@agent-sop:<name>` runs a named SOP.
+- **Blog: "Your agents run for days: now Kiro CLI keeps up" (Nov 23, 2026).** I only saw the title on the blog index. I did not open the post.
+- **Earlier context.** The blog lists "Kiro CLI V3 is rolling out as the default experience" (Oct 9, 2026), "Introducing memory in Kiro IDE and CLI" (Oct 20, 2026), and "Local sandboxing in Kiro" (Oct 14, 2026).
+- **Models in CLI.** Claude Fable 5.2 Preview (Nov 23) and GPT 6.2 Astra Preview (Nov 25) are rolling out to Kiro Enterprise organizations only. After a rollout, users restart the CLI to load the new model list.
 
 ## Why it matters
 
-- Organization MCP sign-in replaces a separate browser login for each server with one sign-in.
-- The new hooks let a script apply team rules to every tool call and answer permission prompts. This helps in CI/CD, where nobody is there to approve.
-- The headless docs tell you to name the harness explicitly. This keeps CI runs from changing behavior when the default changes.
+- `SubagentStop` hooks give scripts a way to steer subagents at the point where they finish.
+- Saved Hook output keeps long conversations readable without losing the full output.
+- Guided `/compact` lets you choose what a long session keeps.
+- Headless runs depend on the harness version and the trust flags. Pinning `--v3` or `--v2` and listing exact tools keeps CI runs predictable.
 
 ## What to try this week
 
-- Run a headless job with an explicit harness and a narrow tool list, for example `kiro-cli chat --v3 --no-interactive --trust-tools=read_file,grep_search "Find all TODO comments in src/"`.
-- Write a `PermissionRequest` hook or a `PreToolUse` hook with `updatedInput` for one routine tool call.
-- If your organization uses an identity provider, try `kiro-cli mcp idp setup` and sign in once through `/mcp`.
-- Try `/spec new` or `/tangent` in a V3 session.
+- Update to Kiro CLI 3.6.2 and run `/compact` with your own instructions in a V3 session.
+- Run a headless job with explicit flags: `kiro-cli chat --v3 --no-interactive --trust-tools=read_file,grep_search "Find all TODO comments in src/"`.
+- If you use `use_aws` in `--trust-tools`, check your scripts for the new warning on V3.
+- Read the blog post on long-running agents in the CLI.
 
 ## Sources
 
+- https://kiro.dev/changelog/
 - https://kiro.dev/docs/cli/headless/
-- https://kiro.dev/changelog/
 - https://kiro.dev/blog/
-- https://kiro.dev/blog/cli-3/
 
 
 ---
 
-# Kiro IDE: weekly findings (2026-11-19)
+# Kiro IDE: weekly findings (2026-11-26)
 
 ## What is new
 
-**IDE release 1.4.236 (Nov 18, 2026), from the changelog:**
-- **Install from GitLab.** You can paste a public GitLab URL to install a custom power or import a skill, the same way you do from GitHub. For a self-hosted GitLab, add its host to the `kiroAgent.powers.trustedGitLabHosts` setting first.
-- **Permission Request Hooks.** You can create one in the Hook editor. It runs a command just before Kiro would ask you to approve a tool call, so a script can answer routine prompts in a session nobody is watching. Pre Tool Use Hooks can now replace a tool call's input before it runs. Any approval prompt now shows the final arguments.
-- **Organization sign-in for MCP.** Eligible HTTP MCP servers can share one sign-in through your organization's identity provider. You add the provider your administrator gives you to your user MCP configuration. Then you select **Sign in** on the **Organization sign-in** row in the MCP Servers view.
-- **Chats and Memory settings.** You can move chats between the Side Bar and the Editor Area. You can also choose Memory settings from the Memories view.
-
-**Recent blog posts that touch the IDE (titles and dates only, I did not open the posts):**
-- Nov 17: "Lessons learned from one million evaluations"
-- Nov 12: "Grok 4.7 is now available in Kiro"
-- Nov 10: "Introducing 'Approve for me' in Kiro"
-- Nov 6: "How Kiro Auto uses model cascading to match the model to the work"
-- Nov 4: "Share Kiro credits across your team with credit pooling"
-- Oct 30: "Spec it safe: shift left and harden your specs with security requirements"
-- Oct 20: "Introducing memory in Kiro IDE and CLI"
-- Oct 14: "Local sandboxing in Kiro: keep agent commands within boundaries"
-- Sep 30: "Introducing Kiro workflows"
-
-I found nothing new about specs or steering in the changelog text I could read. The fetch was truncated, so older IDE entries were not visible. I did not fetch kiro.dev, the docs, or the headless page.
+- **Remote work in the IDE (changelog, IDE 1.5.11, Nov 20, 2026).**
+  - **SSH:** "Connect to Host" links a Kiro window to your own Linux machine over SSH. The editor stays on your computer. Files, terminals and the agent run on the remote machine, so the agent can keep working after you disconnect.
+  - **Dev Containers:** You can open a project that has a `.devcontainer` folder with "Reopen in Container".
+  - **Cloud sessions:** You can open a cloud session in its own Kiro window.
+- **Frequent IDE patches.** The changelog lists patches 1.5.37 (Nov 24), 1.5.44 (Nov 25) and 1.5.49 (Nov 25). I did not read the notes for these patches.
+- **New models for Kiro Enterprise, in Preview.**
+  - Claude Fable 5.2 (Nov 23): 1M context window, 6x credit multiplier, US-only inference.
+  - GPT 6.2 Astra (Nov 25): 1M context window, 7.2x credit multiplier. The multiplier rises to 14.4x for requests over 272K tokens. Inference is US-only.
+  - Access is limited. Organizations enable these models through model governance. To see a new model in the IDE, restart it.
+- **Blog posts related to the IDE.** I only saw titles and dates for these, not the post contents.
+  - Nov 20: "Remote workspaces bring the IDE to where your code and compute already live"
+  - Nov 20: "Introducing Kiro for VS Code"
+  - Nov 10: "Introducing 'Approve for me' in Kiro"
+  - Oct 30: "Spec it safe: shift left and harden your specs with security requirements"
+  - Oct 20: "Introducing memory in Kiro IDE and CLI"
+  - Oct 14: "Local sandboxing in Kiro: keep agent commands within boundaries"
+  - Sep 30: "Introducing Kiro workflows"
+- **Docs.**
+  - The docs describe one agent harness behind the IDE, VS Code, CLI, Web and Mobile. Your `.kiro/` configuration (specs, steering) is shared across them.
+  - The docs list these features: Specs and Bugfix Specs, Steering, Hooks, MCP, Permissions, Custom agents, Workflows, Skills, Powers, Memory, Compaction, Kiroignore, and Checkpoints and rewind.
+  - There are also docs pages for "Remote development" and "Kiro for VS Code".
 
 ## Why it matters
 
-- Permission Request Hooks let unattended sessions handle routine approvals without a person clicking.
-- Seeing final arguments in approval prompts makes it clearer what a tool call will do.
-- GitLab installs and shared MCP sign-in help teams that do not use only GitHub or that manage many MCP servers.
+- Remote SSH and Dev Containers let you keep code and compute where they already live while still using the IDE and its agent.
+- Because `.kiro/` configuration is shared across surfaces, the same specs and steering work in the IDE, the VS Code extension, the CLI and Web.
+- Enterprise teams can try the newest models under model governance. Fable 5.2 and GPT 6.2 Astra carry high credit multipliers, so their cost is worth checking first.
 
 ## What to try this week
 
-- Create a Permission Request Hook in the Hook editor for one low-risk, routine prompt, and check that the script answers it.
-- If you use GitLab, install a power or skill from a public GitLab URL.
-- If your organization has an identity provider for MCP, add it to your user MCP configuration and try the **Organization sign-in** row.
-- Read the "Spec it safe" post to see how to add security requirements to your specs.
+- Update the IDE and connect to a Linux host with "Connect to Host". Try leaving the agent running, then disconnect.
+- Open a project that has a `.devcontainer` folder and choose "Reopen in Container".
+- Read the "Spec it safe" post and add security requirements to one of your specs.
+- Look at the docs pages for Hooks, Steering and Workflows, and automate one repeated step in your project.
+- Enterprise admins: check model governance to see whether Fable 5.2 or GPT 6.2 Astra is available to you.
 
 ## Sources
 
-- https://kiro.dev/changelog/
 - https://kiro.dev/blog/
-- https://kiro.dev/blog/spec-it-safe/
-- https://kiro.dev/blog/memory-in-ide-cli/
-- https://kiro.dev/blog/introducing-approve-for-me/
-- https://kiro.dev/blog/local-sandboxing/
+- https://kiro.dev/changelog/
+- https://kiro.dev/docs/
 
 
 ---
 
-# Kiro WEB: weekly findings (2026-11-19)
+# Kiro WEB: weekly findings (2026-11-26)
 
 ## What is new
 
-I found no Kiro Web release notes dated this week. The Nov 19, 2026 changelog entry that I could read is for Kiro Crew 0.13.0. The Nov 18 entry is for Kiro IDE and the Nov 17 entry is for Kiro CLI. The changelog has a Web filter, but the page I fetched did not apply it, so I could not list Web-only entries. Older Web entries may exist that I did not see.
-
-These items from the official pages relate to Kiro Web:
-
-- **Home page:** kiro.dev links to "Explore Kiro Web" under cloud sessions. It says cloud sessions move long-running tasks to the cloud with parallel agents that can run for hours, so work continues when you close your laptop.
-- **Pull requests on the home page:** The delivery flow on kiro.dev shows a build step that opens a pull request on GitHub or GitLab. That step is followed by verification with property tests and steering, adversarial review agents, and human review.
-- **Autonomous mode in Kiro Web (blog, Sep 14, 2026):**
-  - You can assign work by describing a task on app.kiro.dev, adding the `kiro` label to a GitHub issue, or writing `/kiro` in a comment.
-  - Kiro clones the repository into an isolated sandbox and breaks the work into steps. It then makes the changes, runs the full test suite, and opens a pull request.
-  - Kiro never merges pull requests on its own and cannot bypass branch protection rules. Every pull request needs the same approvals as human code, including CI and code-owner review.
-  - When the task is unclear, Kiro asks clarifying questions instead of guessing.
-  - AWS teams used it on the Kani and CBMC repositories. They report 94 pull requests in Nov and Dec 2025, of which 35 are merged as of Sep 2026, and zero regressions.
-  - The post says the main bottleneck is that Kiro writes pull requests faster than people can review them.
-- **Other recent posts that touch Web:** "Agentic engineering in the cloud" (Sep 3), "Close the laptop, keep the agent: building with cloud sessions" (Aug 18), and "Introducing Kiro workflows" (Sep 30). I saw only their titles and did not open them.
-- **Specs:** The home page says specs capture intent before code is written and verify results afterward. It lists property-based tests, requirements analysis that catches gaps before design, and Bugfix Specs. It does not say these are Web-specific.
+- **Referral codes in Kiro Web (Nov 24, 2026, changelog).** Enterprise users can now generate referral codes in Kiro Web and share them with friends and family. Each code gives 20% off any paid individual plan (Pro, Pro+, Pro Max, or Power) for 12 billing cycles.
+- **Kiro Enterprise for iPhone (Nov 24, 2026, changelog).** The app is on the App Store for organization accounts and needs iOS 26 or later. You can start cloud sessions, follow the agent, review its changes, and reply when it needs input. Sessions sync with Kiro Web, so you can start on your phone and continue on the web.
+- **Cloud sessions reach private networks (Nov 20, 2026, blog post title).** I only saw the title on the blog list. I did not open the post, so I can't give details.
+- **Autonomous mode docs (page updated Oct 2, 2026).** This is not new this week, but it is the clearest description of how Web handles specs and pull requests.
+  - Autonomous mode is a toggle in the chat input bar. It is off by default.
+  - The agent plans the work, generates requirements, and defines acceptance criteria.
+  - Sub-agents then write and verify the code in an isolated sandbox.
+  - The agent opens one or more pull requests or merge requests with descriptions of the changes, approach, and trade-offs.
+  - If the agent needs clarification, the task moves to a "Needs attention" state.
+  - On a PR, you can comment and the agent addresses the comments. `/kiro all` addresses all comments across the PR. `/kiro fix` addresses one conversation thread.
+- **Docs structure for Web.** The docs list pages for Setup & First Run, Identity Center, Connect your repositories (GitHub and GitLab), Working with the agent, Autonomous mode, Schedule, Configuration Sync, and Sandbox. The docs describe Web as a "browser-based agent for multi-repo tasks that plans, implements, and opens PRs".
+- **Background reading (Sep 14, 2026, blog post title).** "Tackling technical debt at scale with autonomous mode in Kiro Web." I saw only the title.
 
 ## Why it matters
 
-- Autonomous mode turns a GitHub issue into a reviewable pull request without a developer in the loop. People step in at code review.
-- The review queue can become the limit, so plan reviewer time before assigning many issues at once.
-- Branch protection and CI still apply. Kiro Web does not skip your normal merge rules.
+- Web sessions now sync with the iPhone app for organization accounts, so you can start a task on one device and finish it on another.
+- Autonomous mode plus the `/kiro all` and `/kiro fix` commands let you review and steer a Web-created PR from the PR itself.
+- The docs say shared `.kiro/` configuration (specs, steering) works across all surfaces, including Web.
 
 ## What to try this week
 
-- Pick a small issue with clear acceptance criteria, such as a dependency update, a well-reproduced bug, or a docs fix. Add the `kiro` label or comment `/kiro`, then review the pull request like any other.
-- Skip architectural changes and large refactors, which the blog says are better left to people.
-- Open the changelog and use its Web filter to check for Web entries I could not see.
-
-## Sources
-
-- https://kiro.dev
-- https://kiro.dev/changelog/
-- https://kiro.dev/changelog/?tag=web
-- https://kiro.dev/blog/
-- https://kiro.dev/blog/tackling-technical-debt-at-scale-with-autonomous-mode/
-
-
----
-
-# Kiro CREW: weekly findings (2026-11-19)
-
-## What is new
-
-- **Kiro Crew 0.13.0 (changelog, Nov 19, 2026).** Conductor mode, formerly Ultra Mode, is now on in every standard build. It no longer needs a Feature Preview switch. The LTS edition does not offer it.
-  - The conductor plans from your goal and checks each worker's new work as the crew runs. It re-plans only the item that went wrong.
-  - **Pause all** on the Board stops every running worker, sub-teams included, until **Resume all**.
-  - **Start New Chats in conductor mode** (Settings, Chat, Sessions) is off by default.
-- **Replies from anywhere.** Hover over a session that is waiting on you, or press the right arrow key on it. A card shows its recap, each approval and question in full, and a quick reply box. Notification sources have a new **Deliver to** option. It also sends notes to your Slack, Discord, Telegram, Webex, or Feishu DM. Only critical notes are sent unless you lower the floor.
-- **Chat tools.**
-  - Reopen the last closed session with Cmd/Ctrl+Shift+T.
-  - `/fork <prompt>` continues in a copy of the conversation.
-  - **Optimize Before Sending** rewrites your message when you send it.
-  - **Preferred Reply Language** sets the language of replies.
-  - **Continue automatically** resumes a chat when a usage limit resets.
-- **Files and Git panels.** The Files tab opens on **Edited**, which lists the files the chat changed. The Git panel adds **Branch changes**. Artifact versions can be compared side by side.
-- **Bots choose their harness.** The **Agent harness** row on a Bot's profile is out of preview. A Bot's Dashboard can be downloaded as HTML. Chats a Bot opens stay off your Sessions list unless you turn on **Show in my Sessions list**.
-- **Previews you can turn on (off by default).**
-  - Secrets vault redesign.
-  - Agent Harness for worker chats, which can start worker chats on another harness such as Claude Code or Codex.
-  - Mark out-of-date Dashboard fields.
-  - Send pending approvals to chat apps.
-  - Kiro Memory. Memories saved by other Kiro clients are read-only in Crew.
-- **Changes to check before upgrading.**
-  - Release notes moved to Settings, About.
-  - MCP Servers now have their own tab under Customize.
-  - Usage data is on by default. You can turn it off with `telemetry.enabled: false`, `KIROCREW_TELEMETRY=0`, or `DO_NOT_TRACK=1`.
-  - `hooks.batch_write_guard` is on by default.
-  - On Linux, external edits to config files that Crew does not recognize wait for your review.
-- **Blog, Nov 5, 2026:** "Introducing bots in Kiro Crew." Earlier posts are "Introducing Kiro Crew" (Aug 4) and the software factory post about merging 1,000 PRs in a week (Sep 18).
-- **Docs.** The Crew quick start describes Crew as an open-source personal AI agent that runs locally or remotely. It works from the desktop app, web dashboard, CLI, and chat apps such as Slack, Discord, Telegram, Teams, Webex, WeCom, and WeChat. It supports parallel subagents, scheduled jobs, heartbeats, and a Task Runner.
-
-## Why it matters
-
-Conductor mode is now available to everyone on standard builds. A planner can coordinate several workers, check their results, and re-plan only what failed. The quick reply card and chat-app delivery let you answer approvals without sitting at the app. The Bot harness choice and the worker harness preview let a team mix agent engines.
-
-## What to try this week
-
-1. Update to Crew 0.13.0 and read the "Before You Upgrade" notes, especially the usage data default.
-2. Turn on conductor mode in a new chat. Give it a multi-part goal, and try **Pause all** and **Resume all** on the Board.
-3. Set **Deliver to** for one notification source so approvals reach your chat app.
-4. Try `/fork` on a long chat and the **Edited** tab in the Files panel.
-5. Enable the **Agent Harness for worker chats** preview to try a worker on another harness.
+- Turn on **Autonomous** in a Web session for a well-defined task, such as writing tests or a small refactor. Review the PR it opens.
+- Leave a comment on the PR and use `/kiro fix` on one thread to see the agent push an update.
+- If you have an Enterprise account, generate a referral code in Kiro Web.
+- Read the private networks post if your repositories sit behind a private network.
 
 ## Sources
 
 - https://kiro.dev/changelog/
 - https://kiro.dev/blog/
 - https://kiro.dev/docs/
-- https://kiro.dev/docs/crew/
+- https://kiro.dev/docs/web/autonomous-mode/
+
+
+---
+
+# Kiro CREW: weekly findings (2026-11-26)
+
+## What is new
+
+- **Conductor mode in Kiro Crew.** The Kiro blog lists a post titled "Introducing conductor mode in Kiro Crew" (Nov 20, 2026). I could not open the post itself, so I have no details on what the mode does.
+- **Bots in Kiro Crew.** The blog lists "Introducing bots in Kiro Crew" (Nov 5, 2026). The docs describe a bot as a persistent agent in Crew. Each bot has its own threads, memory and workspace. It can track ongoing goals, delegate tasks to workers and follow up on progress over time. The docs suggest bots for these jobs:
+  - contributing to a project
+  - working through a bug backlog
+  - improving CI reliability
+  - monitoring build health
+- **Claude Fable 5.2 Preview (Nov 23, 2026).** It is rolling out to Kiro Enterprise organizations. The changelog says the model coordinates subagents on long runs. To load the new model list in Crew, run `kirocrew restart`.
+- **Crew docs overview.** The docs describe Crew as an open-source personal AI agent that runs locally or on remote hardware. You can reach it from the desktop app, a web dashboard, the CLI, and chat channels such as Slack, Discord, Telegram, Teams, Webex, WeCom and WeChat. The Features section lists these areas:
+  - subagents
+  - scheduling
+  - artifacts
+  - agent backends (Kiro CLI, Claude Code, Kiro Agent, Codex, OpenCode, Pi, goose)
+  - multi-instance (Preview)
+  - Task Runner
+  - workflows
+  - memory
+  - knowledge
+  - snapshot and restore
+  - browser
+  - Computer Use
+- **Crew on the kiro.dev homepage.** The homepage shows Crew as one sandboxed run in a software delivery loop. Signals come from Slack, Teams, GitHub, GitLab and MCP. Triggers include hourly channel watch (heartbeat), mention, DM or webhook. Small fixes are built in a sandbox, then reviewed. Big items become specs for a human.
+- **Related CLI change.** CLI 3.6.0 added `SubagentStop` hooks (V3 only). They run when a dispatched subagent finishes and can send it one more instruction. This is a CLI feature, not a Crew feature.
+
+## Why it matters
+
+- Bots give Crew agents that own a goal over time. A single chat or a scheduled job does not do that.
+- Crew can run on your own machine, in a container or on a remote host. Its sessions, memory and schedules persist across restarts.
+- The homepage flow, from signal to sandboxed fix to PR to human review, shows how Kiro expects teams to use Crew.
+
+## What to try this week
+
+- Install Crew with `curl -fsSL https://download.crew.kiro.dev/cli.sh | sh`. Then run `kirocrew setup`, `kirocrew doctor` and `kirocrew gateway`. Open http://localhost:5476.
+- Read the Bots docs and set up one bot for a small, ongoing goal, such as keeping nightly builds green.
+- In chat, ask Crew to "research these three options in parallel and recommend one". This uses its subagents.
+- Add a scheduled job with natural language, for example "Every weekday at 9, summarize my open work".
+- Read the conductor mode blog post. I could not open it, so check the Nov 20 entry on the blog page.
+
+## Sources
+
 - https://kiro.dev
-- https://kiro.dev/docs/cli/headless/ (checked; it had no Crew-specific content)
+- https://kiro.dev/docs/
+- https://kiro.dev/docs/crew/
+- https://kiro.dev/docs/crew/bots/
+- https://kiro.dev/docs/crew/features/
+- https://kiro.dev/docs/cli/headless/
+- https://kiro.dev/changelog/
+- https://kiro.dev/blog/
